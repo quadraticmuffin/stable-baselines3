@@ -163,7 +163,16 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             with th.no_grad():
                 # Convert to pytorch tensor or to TensorDict
                 obs_tensor = obs_as_tensor(self._last_obs, self.device)
-                actions, values, log_probs = self.policy(obs_tensor)
+                print(f'policy._last_infos = {self._last_infos}')
+                if self._last_infos is None:
+                    invalid_action_mask = None
+                else:
+                    invalid_action_mask = th.stack([
+                        info.get("invalid_action_mask", th.ones(self.action_space.shape, dtype=th.bool))
+                        for info in self._last_infos
+                    ])
+                print(f'invalid_action_mask = {invalid_action_mask}')
+                actions, values, log_probs = self.policy(obs_tensor, invalid_action_mask=invalid_action_mask)
             actions = actions.cpu().numpy()
 
             # Rescale and perform action
@@ -203,6 +212,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             rollout_buffer.add(self._last_obs, actions, rewards, self._last_episode_starts, values, log_probs)
             self._last_obs = new_obs
+            self._last_infos = infos
             self._last_episode_starts = dones
 
         with th.no_grad():
