@@ -6,7 +6,7 @@ import numpy as np
 
 from stable_baselines3.common import type_aliases
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, VecMonitor, is_vecenv_wrapped
-
+from stable_baselines3.common.utils import get_mask_from_infos
 
 def evaluate_policy(
     model: "type_aliases.PolicyPredictor",
@@ -85,7 +85,8 @@ def evaluate_policy(
     states = None
     episode_starts = np.ones((env.num_envs,), dtype=bool)
     while (episode_counts < episode_count_targets).any():
-        actions, states = model.predict(observations, state=states, episode_start=episode_starts, deterministic=deterministic)
+        invalid_action_mask = get_mask_from_infos(infos, model.action_space)
+        actions, states = model.predict(observations, state=states, episode_start=episode_starts, deterministic=deterministic, invalid_action_mask=invalid_action_mask)
         observations, rewards, dones, infos = env.step(actions)
         current_rewards += rewards
         current_lengths += 1
