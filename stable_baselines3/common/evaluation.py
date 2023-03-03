@@ -6,7 +6,7 @@ import numpy as np
 
 from stable_baselines3.common import type_aliases
 from stable_baselines3.common.vec_env import DummyVecEnv, VecEnv, VecMonitor, is_vecenv_wrapped
-from stable_baselines3.common.utils import get_mask_from_infos
+from stable_baselines3.common.invalid_action_mask import get_mask_from_infos
 
 def evaluate_policy(
     model: "type_aliases.PolicyPredictor",

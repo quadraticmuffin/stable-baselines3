@@ -11,8 +11,9 @@ from stable_baselines3.common.buffers import DictRolloutBuffer, RolloutBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
-from stable_baselines3.common.utils import obs_as_tensor, safe_mean, get_mask_from_infos
+from stable_baselines3.common.utils import obs_as_tensor, safe_mean
 from stable_baselines3.common.vec_env import VecEnv
+from stable_baselines3.common.invalid_action_mask import get_mask_from_infos
 
 SelfOnPolicyAlgorithm = TypeVar("SelfOnPolicyAlgorithm", bound="OnPolicyAlgorithm")
 
@@ -163,9 +164,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             with th.no_grad():
                 # Convert to pytorch tensor or to TensorDict
                 obs_tensor = obs_as_tensor(self._last_obs, self.device)
-                print(f'policy._last_infos = {self._last_infos}')
                 invalid_action_mask = get_mask_from_infos(self._last_infos, self.action_space, self.device)
-                print(f'invalid_action_mask = {invalid_action_mask}')
                 actions, values, log_probs = self.policy(obs_tensor, invalid_action_mask=invalid_action_mask)
             actions = actions.cpu().numpy()
 
