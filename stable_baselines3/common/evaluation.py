@@ -85,7 +85,7 @@ def evaluate_policy(
     states = None
     episode_starts = np.ones((env.num_envs,), dtype=bool)
     while (episode_counts < episode_count_targets).any():
-        invalid_action_mask = get_mask_from_infos(infos, model.action_space)
+        invalid_action_mask = get_mask_from_infos(infos, model.action_space, model.device)
         actions, states = model.predict(observations, state=states, episode_start=episode_starts, deterministic=deterministic, invalid_action_mask=invalid_action_mask)
         observations, rewards, dones, infos = env.step(actions)
         current_rewards += rewards

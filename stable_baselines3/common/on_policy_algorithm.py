@@ -164,7 +164,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 # Convert to pytorch tensor or to TensorDict
                 obs_tensor = obs_as_tensor(self._last_obs, self.device)
                 print(f'policy._last_infos = {self._last_infos}')
-                invalid_action_mask = get_mask_from_infos(self._last_infos, self.action_space)
+                invalid_action_mask = get_mask_from_infos(self._last_infos, self.action_space, self.device)
                 print(f'invalid_action_mask = {invalid_action_mask}')
                 actions, values, log_probs = self.policy(obs_tensor, invalid_action_mask=invalid_action_mask)
             actions = actions.cpu().numpy()
