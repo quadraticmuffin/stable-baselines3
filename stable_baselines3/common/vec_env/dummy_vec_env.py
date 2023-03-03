@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from copy import deepcopy
-from typing import Any, Callable, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, List, Optional, Sequence, Type, Union, Tuple, Dict
 
 import gym
 import numpy as np
@@ -69,7 +69,14 @@ class DummyVecEnv(VecEnv):
             seeds.append(env.seed(seed + idx))
         return seeds
 
-    def reset(self) -> VecEnvObs:
+    def reset(self, return_info=False) -> Union[VecEnvObs, Tuple[VecEnvObs, List[Dict]]]:
+        if return_info:
+            infos = []
+            for env_idx in range(self.num_envs):
+                obs, info = self.envs[env_idx].reset(return_info=True)
+                self._save_obs(env_idx, obs)
+                infos.append(info)
+            return self._obs_from_buf(), infos
         for env_idx in range(self.num_envs):
             obs = self.envs[env_idx].reset()
             self._save_obs(env_idx, obs)
