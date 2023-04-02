@@ -624,6 +624,7 @@ class ActorCriticPolicy(BasePolicy):
         """
         # Preprocess the observation if needed
         features = self.extract_features(obs)
+        # print('forward features shape: ', features.shape)
         if self.share_features_extractor:
             latent_pi, latent_vf = self.mlp_extractor(features)
         else:
@@ -632,6 +633,7 @@ class ActorCriticPolicy(BasePolicy):
             latent_vf = self.mlp_extractor.forward_critic(vf_features)
         # Evaluate the values for the given observations
         values = self.value_net(latent_vf)
+        # print('forward latent pi shape:', latent_pi.shape)
         distribution = self._get_action_dist_from_latent(latent_pi, invalid_action_mask=invalid_action_mask)
         actions = distribution.get_actions(deterministic=deterministic)
         log_prob = distribution.log_prob(actions)
@@ -666,9 +668,13 @@ class ActorCriticPolicy(BasePolicy):
             return self.action_dist.proba_distribution(mean_actions, self.log_std)
         elif isinstance(self.action_dist, CategoricalDistribution):
             # Here mean_actions are the logits before the softmax
+            # print('before mask')
+            # print(mean_actions)
             if invalid_action_mask is not None:
                 invalid_actions = th.tensor(-1e8).to(dtype=mean_actions.dtype, device=mean_actions.device)
                 mean_actions = th.where(invalid_action_mask, mean_actions, invalid_actions)
+            # print('after mask')
+            # print(mean_actions)
             return self.action_dist.proba_distribution(action_logits=mean_actions)
         elif isinstance(self.action_dist, MultiCategoricalDistribution):
             # Here mean_actions are the flattened logits
@@ -691,25 +697,28 @@ class ActorCriticPolicy(BasePolicy):
         """
         return self.get_distribution(observation, invalid_action_mask=invalid_action_mask).get_actions(deterministic=deterministic)
 
-    def evaluate_actions(self, obs: th.Tensor, actions: th.Tensor) -> Tuple[th.Tensor, th.Tensor, Optional[th.Tensor]]:
+    def evaluate_actions(self, obs: th.Tensor, actions: th.Tensor, invalid_action_mask: th.Tensor) -> Tuple[th.Tensor, th.Tensor, Optional[th.Tensor]]:
         """
         Evaluate actions according to the current policy,
         given the observations.
 
         :param obs: Observation
         :param actions: Actions
+        :param invalid_action_mask: invalid_action_mask
         :return: estimated value, log likelihood of taking those actions
             and entropy of the action distribution.
         """
         # Preprocess the observation if needed
         features = self.extract_features(obs)
+        # print('eval features shape:', features.shape)
         if self.share_features_extractor:
             latent_pi, latent_vf = self.mlp_extractor(features)
         else:
             pi_features, vf_features = features
             latent_pi = self.mlp_extractor.forward_actor(pi_features)
             latent_vf = self.mlp_extractor.forward_critic(vf_features)
-        distribution = self._get_action_dist_from_latent(latent_pi)
+        # print('eval latent pi shape:', latent_pi.shape)
+        distribution = self._get_action_dist_from_latent(latent_pi, invalid_action_mask)
         log_prob = distribution.log_prob(actions)
         values = self.value_net(latent_vf)
         entropy = distribution.entropy()

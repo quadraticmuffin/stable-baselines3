@@ -352,6 +352,7 @@ class RolloutBuffer(BaseBuffer):
         self.gamma = gamma
         self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
         self.returns, self.episode_starts, self.values, self.log_probs = None, None, None, None
+        self.invalid_action_masks = None
         self.generator_ready = False
         self.reset()
 
@@ -365,6 +366,7 @@ class RolloutBuffer(BaseBuffer):
         self.values = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.log_probs = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.advantages = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
+        self.invalid_action_masks = np.zeros((self.buffer_size, self.n_envs, self.action_space.n), dtype=bool)
         self.generator_ready = False
         super().reset()
 
@@ -409,6 +411,7 @@ class RolloutBuffer(BaseBuffer):
         self,
         obs: np.ndarray,
         action: np.ndarray,
+        invalid_action_mask: np.ndarray,
         reward: np.ndarray,
         episode_start: np.ndarray,
         value: th.Tensor,
@@ -417,6 +420,7 @@ class RolloutBuffer(BaseBuffer):
         """
         :param obs: Observation
         :param action: Action
+        :param invalid_action_mask: invalid action mask
         :param reward:
         :param episode_start: Start of episode signal.
         :param value: estimated value of the current state
@@ -438,6 +442,7 @@ class RolloutBuffer(BaseBuffer):
 
         self.observations[self.pos] = np.array(obs).copy()
         self.actions[self.pos] = np.array(action).copy()
+        self.invalid_action_masks[self.pos] = np.array(invalid_action_mask).copy()
         self.rewards[self.pos] = np.array(reward).copy()
         self.episode_starts[self.pos] = np.array(episode_start).copy()
         self.values[self.pos] = value.clone().cpu().numpy().flatten()
@@ -455,6 +460,7 @@ class RolloutBuffer(BaseBuffer):
             _tensor_names = [
                 "observations",
                 "actions",
+                "invalid_action_masks",
                 "values",
                 "log_probs",
                 "advantages",
@@ -478,6 +484,7 @@ class RolloutBuffer(BaseBuffer):
         data = (
             self.observations[batch_inds],
             self.actions[batch_inds],
+            self.invalid_action_masks[batch_inds],
             self.values[batch_inds].flatten(),
             self.log_probs[batch_inds].flatten(),
             self.advantages[batch_inds].flatten(),

@@ -175,6 +175,8 @@ class PPO(OnPolicyAlgorithm):
         """
         Update policy using the currently gathered rollout buffer.
         """
+        print('consuming rollouts...')
+        print('size of rollout buffer:', self.rollout_buffer.buffer_size)
         # Switch to train mode (this affects batch norm / dropout)
         self.policy.set_training_mode(True)
         # Update optimizer learning rate
@@ -196,6 +198,7 @@ class PPO(OnPolicyAlgorithm):
             approx_kl_divs = []
             # Do a complete pass on the rollout buffer
             for rollout_data in self.rollout_buffer.get(self.batch_size):
+                invalid_action_masks = rollout_data.invalid_action_masks
                 actions = rollout_data.actions
                 if isinstance(self.action_space, spaces.Discrete):
                     # Convert discrete action from float to long
@@ -204,8 +207,8 @@ class PPO(OnPolicyAlgorithm):
                 # Re-sample the noise matrix because the log_std has changed
                 if self.use_sde:
                     self.policy.reset_noise(self.batch_size)
-
-                values, log_prob, entropy = self.policy.evaluate_actions(rollout_data.observations, actions)
+                
+                values, log_prob, entropy = self.policy.evaluate_actions(rollout_data.observations, actions, invalid_action_masks)
                 values = values.flatten()
                 # Normalize advantage
                 advantages = rollout_data.advantages

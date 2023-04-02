@@ -11,5 +11,5 @@ def get_mask_from_infos(infos: Optional[Dict], action_space: spaces.Space, devic
             if "invalid_action_mask" in info:
                 masks.append(info.get("invalid_action_mask"))
             else:
-                masks.append(th.ones(action_space.shape, dtype=th.bool, device=device))
-        return th.stack(masks)
+                masks.append(th.ones(action_space.shape, dtype=th.bool))
+        return th.stack(masks).to(device)
