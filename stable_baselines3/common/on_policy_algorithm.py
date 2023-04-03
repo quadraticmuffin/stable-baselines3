@@ -142,10 +142,11 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         :return: True if function returned with at least `n_rollout_steps`
             collected, False if callback terminated rollout prematurely.
         """
+        rollout_start_time = time.time_ns()
+        callback_time = 0
         assert self._last_obs is not None, "No previous observation was provided"
         # Switch to eval mode (this affects batch norm / dropout)
         self.policy.set_training_mode(False)
-        rollout_start_time = time.time_ns()
 
         n_steps = 0
         rollout_buffer.reset()
@@ -178,9 +179,10 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             # Give access to local variables
             callback.update_locals(locals())
+            callback_start_time = time.time_ns()
             if callback.on_step() is False:
                 return False
-
+            callback_time += time.time_ns() - callback_start_time
             self._update_info_buffer(infos)
             n_steps += 1
 
@@ -204,7 +206,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             rollout_buffer.add(self._last_obs, actions, rewards, self._last_episode_starts, values, log_probs)
             self._last_obs = new_obs
             self._last_episode_starts = dones
-
+        
         with th.no_grad():
             # Compute value for the last timestep
             values = self.policy.predict_values(obs_as_tensor(new_obs, self.device))
@@ -212,7 +214,10 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         rollout_buffer.compute_returns_and_advantage(last_values=values, dones=dones)
 
         callback.on_rollout_end()
-        self.rollout_time += time.time_ns() - rollout_start_time
+        rollout_time = time.time_ns() - rollout_start_time
+        self.logger.record("time/rollout_time", (rollout_time - callback_time) / 1e9)
+        self.rollout_time += rollout_time - callback_time
+        self.callback_time += callback_time
         return True
 
     def train(self) -> None:
@@ -240,7 +245,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             tb_log_name,
             progress_bar,
         )
-        callback_time = [0]
         callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:
@@ -254,7 +258,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             # Display training infos
             if log_interval is not None and iteration % log_interval == 0:
-                time_elapsed = max((self.rollout_time - callback_time[0]) / 1e9, sys.float_info.epsilon)
+                time_elapsed = max(self.rollout_time / 1e9, sys.float_info.epsilon)
                 fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
                 self.logger.record("time/iterations", iteration, exclude="tensorboard")
                 if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
@@ -264,7 +268,6 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 self.logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
                 self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")
                 self.logger.dump(step=self.num_timesteps)
-
             self.train()
 
         callback.on_training_end()
