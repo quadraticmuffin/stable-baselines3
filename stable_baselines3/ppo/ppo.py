@@ -291,6 +291,8 @@ class PPO(OnPolicyAlgorithm):
         self.logger.record("train/clip_range", clip_range)
         if self.clip_range_vf is not None:
             self.logger.record("train/clip_range_vf", clip_range_vf)
+        self.logger.dump(step=self.num_timesteps)
+        
 
     def learn(
         self: SelfPPO,

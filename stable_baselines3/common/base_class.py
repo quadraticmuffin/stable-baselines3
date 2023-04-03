@@ -129,6 +129,7 @@ class BaseAlgorithm(ABC):
         self.seed = seed
         self.action_noise: Optional[ActionNoise] = None
         self.start_time = None
+        self.rollout_time = None
         self.policy = None
         self.learning_rate = learning_rate
         self.tensorboard_log = tensorboard_log
@@ -385,6 +386,7 @@ class BaseAlgorithm(ABC):
         :return: Total timesteps and callback(s)
         """
         self.start_time = time.time_ns()
+        self.rollout_time = 0
 
         if self.ep_info_buffer is None or reset_num_timesteps:
             # Initialize buffers if they don't exist, or reinitialize if resetting counters

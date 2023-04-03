@@ -145,6 +145,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         assert self._last_obs is not None, "No previous observation was provided"
         # Switch to eval mode (this affects batch norm / dropout)
         self.policy.set_training_mode(False)
+        rollout_start_time = time.time_ns()
 
         n_steps = 0
         rollout_buffer.reset()
@@ -211,7 +212,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         rollout_buffer.compute_returns_and_advantage(last_values=values, dones=dones)
 
         callback.on_rollout_end()
-
+        self.rollout_time += time.time_ns() - rollout_start_time
         return True
 
     def train(self) -> None:
@@ -239,7 +240,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             tb_log_name,
             progress_bar,
         )
-
+        callback_time = [0]
         callback.on_training_start(locals(), globals())
 
         while self.num_timesteps < total_timesteps:
@@ -253,7 +254,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
             # Display training infos
             if log_interval is not None and iteration % log_interval == 0:
-                time_elapsed = max((time.time_ns() - self.start_time) / 1e9, sys.float_info.epsilon)
+                time_elapsed = max((self.rollout_time - callback_time[0]) / 1e9, sys.float_info.epsilon)
                 fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
                 self.logger.record("time/iterations", iteration, exclude="tensorboard")
                 if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
