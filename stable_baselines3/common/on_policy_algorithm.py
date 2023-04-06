@@ -86,7 +86,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             tensorboard_log=tensorboard_log,
             supported_action_spaces=supported_action_spaces,
         )
-
+        self.last_step_end_time = None
         self.n_steps = n_steps
         self.gamma = gamma
         self.gae_lambda = gae_lambda
@@ -172,9 +172,12 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             # Clip the actions to avoid out of bound error
             if isinstance(self.action_space, spaces.Box):
                 clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
-
+            # if self.last_step_end_time is not None:
+                # print(f'agent time: {time.time() - self.last_step_end_time}')
+            # env_step_start = time.time()
             new_obs, rewards, dones, infos = env.step(clipped_actions)
-
+            # print(f'env time: {time.time() - env_step_start}')
+            # self.last_step_end_time = time.time()
             self.num_timesteps += env.num_envs
 
             # Give access to local variables
@@ -264,7 +267,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
                     self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
                     self.logger.record("rollout/ep_len_mean", safe_mean([ep_info["l"] for ep_info in self.ep_info_buffer]))
-                self.logger.record("time/fps", fps)
+                self.logger.record("time/rollout_fps", fps)
                 self.logger.record("time/time_elapsed", int(time_elapsed), exclude="tensorboard")
                 self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")
                 self.logger.dump(step=self.num_timesteps)

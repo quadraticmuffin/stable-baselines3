@@ -296,7 +296,7 @@ class PPO(OnPolicyAlgorithm):
             self.logger.record("train/clip_range_vf", clip_range_vf)
         self.logger.record("time/train_time", train_time)
         self.logger.record("time/batches_per_sec", self.n_steps / self.batch_size / train_time)
-        self.logger.record("time/fps", self.n_steps / train_time)
+        self.logger.record("time/train_fps", self.n_steps / train_time)
         
         self.logger.dump(step=self.num_timesteps)
         
