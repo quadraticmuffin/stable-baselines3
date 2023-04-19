@@ -1,3 +1,4 @@
+import time
 import os
 import warnings
 from abc import ABC, abstractmethod
@@ -429,6 +430,7 @@ class EvalCallback(EventCallback):
                 self._is_success_buffer.append(maybe_is_success)
 
     def _on_step(self) -> bool:
+        start_time = time.time_ns()
         continue_training = True
 
         if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
@@ -494,10 +496,15 @@ class EvalCallback(EventCallback):
                 self.logger.record("eval/success_rate", success_rate)
 
             # Dump log so the evaluation results are printed with the correct timestep
+            eval_time = (time.time_ns() - start_time) / 1e9
+            self.logger.record("time/eval_time", eval_time)
+            self.logger.record("time/eval_fps", sum(episode_lengths) / eval_time)
+            new_best = mean_reward > self.best_mean_reward
+            self.logger.record("eval/new_best", new_best)
             self.logger.record("time/total_timesteps", self.num_timesteps, exclude="tensorboard")
             self.logger.dump(self.num_timesteps)
 
-            if mean_reward > self.best_mean_reward:
+            if new_best:
                 if self.verbose >= 1:
                     print("New best mean reward!")
                 if self.best_model_save_path is not None:
