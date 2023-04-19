@@ -262,7 +262,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             # Display training infos
             if log_interval is not None and iteration % log_interval == 0:
                 time_elapsed = max(self.rollout_time / 1e9, sys.float_info.epsilon)
-                fps = int((self.num_timesteps - self._num_timesteps_at_start) / time_elapsed)
+                fps = (self.num_timesteps - self._num_timesteps_at_start) / time_elapsed
                 self.logger.record("time/iterations", iteration, exclude="tensorboard")
                 if len(self.ep_info_buffer) > 0 and len(self.ep_info_buffer[0]) > 0:
                     self.logger.record("rollout/ep_rew_mean", safe_mean([ep_info["r"] for ep_info in self.ep_info_buffer]))
