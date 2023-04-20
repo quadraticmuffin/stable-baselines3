@@ -204,7 +204,7 @@ def configure_logger(
             latest_run_id -= 1
         save_path = os.path.join(tensorboard_log, f"{tb_log_name}_{latest_run_id + 1}")
         if verbose >= 1:
-            format_strings = ["stdout", "tensorboard"]
+            format_strings = ["stdout", "tensorboard", "csv"]
         else:
             format_strings = ["tensorboard"]
     elif verbose == 0:
