@@ -205,8 +205,11 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                     with th.no_grad():
                         terminal_value = self.policy.predict_values(terminal_obs)[0]
                     rewards[idx] += self.gamma * terminal_value
-
-            rollout_buffer.add(self._last_obs, actions, rewards, self._last_episode_starts, values, log_probs)
+            if -1 in actions: # forfeited because no actions available in 1v1
+                n_steps -= 1  # in this case, we don't want it in rollout_buffer
+                              # because it'll mess up the prob distr
+            else:
+                rollout_buffer.add(self._last_obs, actions, rewards, self._last_episode_starts, values, log_probs)
             self._last_obs = new_obs
             self._last_episode_starts = dones
         
