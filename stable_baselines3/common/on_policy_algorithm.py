@@ -172,12 +172,12 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             # Clip the actions to avoid out of bound error
             if isinstance(self.action_space, spaces.Box):
                 clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
-            # if self.last_step_end_time is not None:
-                # print(f'agent time: {time.time() - self.last_step_end_time}')
-            # env_step_start = time.time()
+            if self.last_step_end_time is not None:
+                print(f'agent time: {time.time() - self.last_step_end_time}')
+            env_step_start = time.time()
             new_obs, rewards, dones, infos = env.step(clipped_actions)
-            # print(f'env time: {time.time() - env_step_start}')
-            # self.last_step_end_time = time.time()
+            print(f'env time: {time.time() - env_step_start}')
+            self.last_step_end_time = time.time()
             self.num_timesteps += env.num_envs
 
             # Give access to local variables
