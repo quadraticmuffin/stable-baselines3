@@ -87,6 +87,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             supported_action_spaces=supported_action_spaces,
         )
         self.last_step_end_time = None
+        self.agent_time = 0
+        self.env_time = 0
         self.n_steps = n_steps
         self.gamma = gamma
         self.gae_lambda = gae_lambda
@@ -173,10 +175,11 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             if isinstance(self.action_space, spaces.Box):
                 clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
             if self.last_step_end_time is not None:
-                print(f'agent time: {time.time() - self.last_step_end_time}')
+                self.agent_time += time.time() - self.last_step_end_time
             env_step_start = time.time()
             new_obs, rewards, dones, infos = env.step(clipped_actions)
-            print(f'env time: {time.time() - env_step_start}')
+            self.env_time += time.time() - env_step_start
+            print(f'env takes {self.env_time / (self.env_time + self.agent_time)} of total time')
             self.last_step_end_time = time.time()
             self.num_timesteps += env.num_envs
 
