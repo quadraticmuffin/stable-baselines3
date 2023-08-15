@@ -176,11 +176,12 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 clipped_actions = np.clip(actions, self.action_space.low, self.action_space.high)
             if self.last_step_end_time is not None:
                 self.agent_time += time.time() - self.last_step_end_time
+                print(f'agent time: {time.time() - self.last_step_end_time}')
             env_step_start = time.time()
             new_obs, rewards, dones, infos = env.step(clipped_actions)
             self.env_time += time.time() - env_step_start
             print(f'env time: {time.time() - env_step_start}')
-            # print(f'env takes {self.env_time / (self.env_time + self.agent_time)} of total time')
+            print(f'env has taken {self.env_time / (self.env_time + self.agent_time)} of total time')
             self.last_step_end_time = time.time()
             self.num_timesteps += env.num_envs
 
