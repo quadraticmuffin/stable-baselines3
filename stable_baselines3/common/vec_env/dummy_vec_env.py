@@ -58,8 +58,8 @@ class DummyVecEnv(VecEnv):
                 # save final observation where user can get it, then reset
                 self.buf_infos[env_idx]["terminal_observation"] = obs
                 obs = self.envs[env_idx].reset()
-            self._save_obs(env_idx, obs)
-        return (self._obs_from_buf(), np.copy(self.buf_rews), np.copy(self.buf_dones), deepcopy(self.buf_infos))
+            # self._save_obs(env_idx, obs)
+        return ({k: np.atleast_2d(v) for k, v in obs.items()}, np.copy(self.buf_rews), np.copy(self.buf_dones), deepcopy(self.buf_infos))
 
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
         if seed is None:
