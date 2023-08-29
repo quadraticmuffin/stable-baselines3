@@ -84,6 +84,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             support_multi_env=True,
             seed=seed,
             tensorboard_log=tensorboard_log,
+            monitor_wrapper=monitor_wrapper,
             supported_action_spaces=supported_action_spaces,
         )
         self.last_step_end_time = None
